@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e3a5f">
+  <meta name="description" content="Tableau de bord HSE — suivi des actions issues des audits, alertes et contrôles.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Plan d'action HSE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="header-icon">⚠️</div>
+      <div class="header-title">
+        <h1>Plan d'action HSE</h1>
+        <p>Suivi des actions issues des audits, alertes et contrôles</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="search-wrapper">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="globalSearch" placeholder="Rechercher…" autocomplete="off">
+      </div>
+
+      <button class="btn btn-primary" id="btnAdd" title="Ajouter une action">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span class="btn-label">Ajouter une action</span>
+      </button>
+
+      <button class="btn btn-secondary" id="btnExport" title="Exporter en CSV">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span class="btn-label">Exporter CSV</span>
+      </button>
+
+      <button class="btn btn-settings" id="btnSettings" title="Paramètres">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Paramètre</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════
+       CONTENU PRINCIPAL
+  ══════════════════════════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- KPI -->
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <!-- Panel tableau -->
+    <div class="panel">
+
+      <!-- Barre de filtres -->
+      <div class="panel-toolbar">
+        <div class="panel-toolbar-left">
+
+          <!-- Options peuplées dynamiquement par renderSourceSelectOptions() -->
+          <select class="filter-select" id="filterSource">
+            <option value="">Toutes les sources</option>
+          </select>
+
+          <select class="filter-select" id="filterEtat">
+            <option value="">Tous les états</option>
+            <option value="A faire">A faire</option>
+            <option value="En cours">En cours</option>
+            <option value="Terminée">Terminée</option>
+            <option value="En retard">En retard</option>
+            <option value="Annulée">Annulée</option>
+          </select>
+
+          <button class="filter-tag retard" id="btnFilterRetard">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/>
+            </svg>
+            Actions en retard
+          </button>
+
+          <button class="btn btn-ghost btn-sm" id="btnResetFilters" title="Réinitialiser tous les filtres">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Réinitialiser
+          </button>
+
+        </div>
+        <div class="panel-toolbar-right">
+          <span class="results-count" id="resultsCount">—</span>
+        </div>
+      </div>
+
+      <!-- Tableau -->
+      <div class="table-wrapper">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th data-col="source"      class="col-source">Source <span class="sort-icon">⇅</span></th>
+              <th data-col="action"      class="col-action">Action <span class="sort-icon">⇅</span></th>
+              <th data-col="pilote"      class="col-pilote">Pilote <span class="sort-icon">⇅</span></th>
+              <th data-col="dateLimite"  class="col-datelimite">Date limite <span class="sort-icon">⇅</span></th>
+              <th data-col="dateRealisation" class="col-datereal">Date réalisation <span class="sort-icon">⇅</span></th>
+              <th data-col="etat"        class="col-etat">Etat <span class="sort-icon">⇅</span></th>
+              <th data-col="commentaires" class="col-commentaires">Commentaires <span class="sort-icon">⇅</span></th>
+              <th class="col-btn"></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <span class="pagination-info" id="pageInfo"></span>
+        <div class="pagination-controls" id="pageControls"></div>
+      </div>
+
+      <!-- Compteur par source -->
+      <div class="source-stats" id="sourceStats"></div>
+
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL — AJOUT / MODIFICATION D'UNE ACTION
+  ══════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="actionModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+
+      <div class="modal-header">
+        <h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          <span id="modalTitle">Ajouter une action</span>
+        </h2>
+        <button class="modal-close" data-close-modal="actionModal" aria-label="Fermer">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="actionForm" novalidate onsubmit="return false;">
+          <div class="form-grid">
+
+            <!-- Source — options peuplées dynamiquement -->
+            <div class="form-group">
+              <label for="fSource">Source de l'action <span class="required">*</span></label>
+              <select class="form-control" id="fSource" required>
+                <option value="">— Sélectionner —</option>
+              </select>
+              <span class="form-error">Veuillez sélectionner une source.</span>
+            </div>
+
+            <!-- Etat -->
+            <div class="form-group">
+              <label for="fEtat">Etat <span class="required">*</span></label>
+              <select class="form-control" id="fEtat" required>
+                <option value="">— Sélectionner —</option>
+                <option value="A faire">A faire</option>
+                <option value="En cours">En cours</option>
+                <option value="Terminée">Terminée</option>
+                <option value="En retard">En retard</option>
+                <option value="Annulée">Annulée</option>
+              </select>
+              <span class="form-error">Veuillez sélectionner un état.</span>
+            </div>
+
+            <!-- Action -->
+            <div class="form-group full">
+              <label for="fAction">Action <span class="required">*</span></label>
+              <textarea class="form-control" id="fAction" rows="3" placeholder="Description détaillée de l'action à réaliser…" required></textarea>
+              <span class="form-error">Veuillez décrire l'action.</span>
+            </div>
+
+            <!-- Pilote — options peuplées dynamiquement -->
+            <div class="form-group">
+              <label for="fPilote">Pilote <span class="required">*</span></label>
+              <select class="form-control" id="fPilote" required>
+                <option value="">— Sélectionner —</option>
+              </select>
+              <span class="form-error">Veuillez sélectionner un pilote.</span>
+            </div>
+
+            <!-- Date limite -->
+            <div class="form-group">
+              <label for="fDateLimite">Date limite de réalisation <span class="required">*</span></label>
+              <input type="date" class="form-control" id="fDateLimite" required>
+              <span class="form-error">Date limite obligatoire.</span>
+            </div>
+
+            <!-- Date réalisation -->
+            <div class="form-group">
+              <label for="fDateRealisation">Date de réalisation</label>
+              <input type="date" class="form-control" id="fDateRealisation">
+              <span class="form-hint">Renseignez cette date pour passer l'état à "Terminée".</span>
+            </div>
+
+            <!-- Commentaires -->
+            <div class="form-group full">
+              <label for="fCommentaires">Commentaires</label>
+              <textarea class="form-control" id="fCommentaires" rows="2" placeholder="Informations complémentaires, points de blocage…"></textarea>
+            </div>
+
+          </div>
+
+          <!-- Alerte retard -->
+          <div id="retardHint" class="alert-retard-hint" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/>
+            </svg>
+            La date limite est dépassée — cette action sera signalée <strong>&nbsp;En retard</strong>.
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close-modal="actionModal">Annuler</button>
+        <button class="btn btn-primary" id="btnSubmitForm">Enregistrer</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL — CONFIRMATION SUPPRESSION D'ACTION
+  ══════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true">
+    <div class="modal-box confirm-box">
+
+      <div class="confirm-body">
+        <div class="confirm-icon">🗑️</div>
+        <h3>Supprimer cette action ?</h3>
+        <p id="deleteActionLabel" style="margin-top:.5rem;font-weight:500;color:var(--text);"></p>
+        <p style="margin-top:.5rem;">Cette opération est irréversible.</p>
+      </div>
+
+      <div class="modal-footer" style="justify-content:center;gap:1rem;">
+        <button class="btn btn-ghost" data-close-modal="confirmModal">Annuler</button>
+        <button class="btn btn-danger" id="btnConfirmDelete">Supprimer définitivement</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL — CONFIRMATION SUPPRESSION DE SOURCE
+       (ouvre par-dessus le drawer de paramètres)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="srcDeleteModal" role="dialog" aria-modal="true" aria-labelledby="srcDeleteTitle">
+    <div class="modal-box confirm-box">
+
+      <div class="modal-header">
+        <h2 id="srcDeleteTitle">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Supprimer la source
+        </h2>
+      </div>
+
+      <div class="confirm-body" style="text-align:left;padding:1.25rem 1.5rem;">
+        <p style="font-size:.9rem;font-weight:600;color:var(--text);margin-bottom:.5rem;">
+          « <span id="srcDeleteName"></span> »
+        </p>
+        <p id="srcDeleteInfo" style="font-size:.84rem;color:var(--text-muted);line-height:1.5;"></p>
+
+        <!-- Affiché uniquement si la source est utilisée -->
+        <div id="srcReplaceWrap" style="display:none;margin-top:.85rem;">
+          <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);display:block;margin-bottom:.4rem;">
+            Source de remplacement
+          </label>
+          <select class="form-control" id="srcReplacement"></select>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content:flex-end;gap:.75rem;">
+        <button class="btn btn-ghost" id="btnCancelDeleteSource">Annuler</button>
+        <button class="btn btn-danger" id="btnConfirmDeleteSource">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          </svg>
+          Supprimer
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODAL — CONFIRMATION SUPPRESSION DE PILOTE
+  ══════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="pilotDeleteModal" role="dialog" aria-modal="true" aria-labelledby="pilotDeleteTitle">
+    <div class="modal-box confirm-box">
+
+      <div class="modal-header">
+        <h2 id="pilotDeleteTitle">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Supprimer le pilote
+        </h2>
+      </div>
+
+      <div class="confirm-body" style="text-align:left;padding:1.25rem 1.5rem;">
+        <p style="font-size:.9rem;font-weight:600;color:var(--text);margin-bottom:.5rem;">
+          « <span id="pilotDeleteName"></span> »
+        </p>
+        <p id="pilotDeleteInfo" style="font-size:.84rem;color:var(--text-muted);line-height:1.5;"></p>
+
+        <!-- Affiché uniquement si le pilote est utilisé par des actions -->
+        <div id="pilotReplaceWrap" style="display:none;margin-top:.85rem;">
+          <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);display:block;margin-bottom:.4rem;">
+            Pilote de remplacement
+          </label>
+          <select class="form-control" id="pilotReplacement"></select>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content:flex-end;gap:.75rem;">
+        <button class="btn btn-ghost" id="btnCancelDeletePilot">Annuler</button>
+        <button class="btn btn-danger" id="btnConfirmDeletePilot">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          </svg>
+          Supprimer
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PANNEAU LATÉRAL — PARAMÈTRES
+  ══════════════════════════════════════════════════════════ -->
+  <div id="settingsBackdrop" class="settings-backdrop" aria-hidden="true"></div>
+
+  <aside id="settingsDrawer" class="settings-drawer" role="dialog" aria-modal="true" aria-label="Paramètres">
+
+    <div class="settings-header">
+      <div class="settings-header-brand">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Paramètres</span>
+      </div>
+      <button class="modal-close" id="btnCloseSettings" aria-label="Fermer les paramètres">✕</button>
+    </div>
+
+    <!-- Navigation par onglets -->
+    <nav class="settings-tabs" role="tablist">
+      <button class="settings-tab active" data-tab="source" role="tab" aria-selected="true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+        Source
+      </button>
+      <button class="settings-tab" data-tab="pilote" role="tab" aria-selected="false">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        Pilote
+      </button>
+      <button class="settings-tab" data-tab="emails" role="tab" aria-selected="false">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        E-mails
+      </button>
+    </nav>
+
+    <div class="settings-body">
+
+      <!-- ── Onglet Source ───────────────────────────────────── -->
+      <div class="settings-tab-panel active" data-tab="source">
+        <div class="settings-section">
+          <p class="settings-section-desc">
+            Gérez les valeurs disponibles dans le champ "Source de l'action". Les modifications sont appliquées immédiatement dans le formulaire et le tableau.
+          </p>
+
+          <div class="source-add-form">
+            <input type="text"
+                   id="newSourceInput"
+                   class="form-control"
+                   placeholder="Nom de la nouvelle source…"
+                   maxlength="50"
+                   autocomplete="off"
+                   spellcheck="false">
+            <button class="btn btn-primary" id="btnAddSource">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Ajouter
+            </button>
+          </div>
+          <div class="source-add-error" id="newSourceError"></div>
+
+          <div class="source-list" id="sourceListItems">
+            <!-- Rendu dynamique par renderSourceList() -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Onglet Pilote ───────────────────────────────────── -->
+      <div class="settings-tab-panel" data-tab="pilote">
+        <div class="settings-section">
+          <p class="settings-section-desc">
+            Gérez les pilotes disponibles dans le formulaire d'action. Toute modification est immédiatement répercutée sur les actions existantes.
+          </p>
+
+          <div class="pilot-add-form">
+            <div class="pilot-add-row">
+              <input type="text"
+                     id="newPilotName"
+                     class="form-control"
+                     placeholder="Nom complet du pilote…"
+                     maxlength="80"
+                     autocomplete="off"
+                     spellcheck="false">
+              <div class="pilot-add-error" id="newPilotNameError"></div>
+            </div>
+            <div class="pilot-add-row">
+              <input type="email"
+                     id="newPilotEmail"
+                     class="form-control"
+                     placeholder="adresse@entreprise.com"
+                     maxlength="120"
+                     autocomplete="off">
+              <div class="pilot-add-error" id="newPilotEmailError"></div>
+            </div>
+            <button class="btn btn-primary" id="btnAddPilot">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Ajouter
+            </button>
+          </div>
+
+          <div class="source-list" id="pilotListItems">
+            <!-- Rendu dynamique par renderPilotList() -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Onglet E-mails ──────────────────────────────────── -->
+      <div class="settings-tab-panel" data-tab="emails">
+        <div class="settings-section">
+          <p class="settings-section-desc">
+            Configurez les e-mails envoyés automatiquement aux pilotes. Les variables <code>{{…}}</code> sont remplacées par les données réelles à l'envoi.
+          </p>
+
+          <!-- ── Modèle : Nouvelle action assignée ── -->
+          <div class="email-template-section">
+            <div class="email-template-header">
+              <div class="email-template-header-left">
+                <span class="email-template-badge new">Assignation</span>
+                <div>
+                  <div class="email-template-title">Nouvelle action assignée</div>
+                  <div class="email-template-subtitle">Envoyé lors de la création d'une action</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="btnResetEmailNewAction" title="Réinitialiser le modèle par défaut">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Réinitialiser
+              </button>
+            </div>
+            <div class="email-template-body">
+              <div class="email-field-group">
+                <label class="email-field-label" for="emailSubject_newAction">Sujet</label>
+                <input type="text" id="emailSubject_newAction" class="form-control" placeholder="Sujet de l'e-mail…" autocomplete="off">
+              </div>
+              <div class="email-field-group">
+                <label class="email-field-label" for="emailBody_newAction">Corps du message</label>
+                <textarea id="emailBody_newAction" class="form-control email-body-textarea" rows="7" placeholder="Corps de l'e-mail…"></textarea>
+              </div>
+              <div class="email-vars">
+                <div class="email-vars-title">Cliquez sur une variable pour l'insérer dans le champ actif :</div>
+                <div class="email-vars-chips">
+                  <button class="email-var-chip" data-var="{{pilote_nom}}">{{pilote_nom}}</button>
+                  <button class="email-var-chip" data-var="{{pilote_email}}">{{pilote_email}}</button>
+                  <button class="email-var-chip" data-var="{{source}}">{{source}}</button>
+                  <button class="email-var-chip" data-var="{{action}}">{{action}}</button>
+                  <button class="email-var-chip" data-var="{{date_limite}}">{{date_limite}}</button>
+                  <button class="email-var-chip" data-var="{{date_realisation}}">{{date_realisation}}</button>
+                  <button class="email-var-chip" data-var="{{etat}}">{{etat}}</button>
+                  <button class="email-var-chip" data-var="{{commentaires}}">{{commentaires}}</button>
+                  <button class="email-var-chip" data-var="{{date_envoi}}">{{date_envoi}}</button>
+                </div>
+              </div>
+              <details class="email-preview-details">
+                <summary class="email-preview-summary">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Aperçu avec données d'exemple
+                </summary>
+                <div id="emailPreview_newAction" class="email-preview-content"></div>
+              </details>
+            </div>
+          </div>
+
+          <div class="email-template-separator"></div>
+
+          <!-- ── Modèle : Action en retard ── -->
+          <div class="email-template-section">
+            <div class="email-template-header">
+              <div class="email-template-header-left">
+                <span class="email-template-badge late">Retard</span>
+                <div>
+                  <div class="email-template-title">Action en retard</div>
+                  <div class="email-template-subtitle">Envoyé lors du passage à "En retard"</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="btnResetEmailLateAction" title="Réinitialiser le modèle par défaut">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Réinitialiser
+              </button>
+            </div>
+            <div class="email-template-body">
+              <div class="email-field-group">
+                <label class="email-field-label" for="emailSubject_lateAction">Sujet</label>
+                <input type="text" id="emailSubject_lateAction" class="form-control" placeholder="Sujet de l'e-mail…" autocomplete="off">
+              </div>
+              <div class="email-field-group">
+                <label class="email-field-label" for="emailBody_lateAction">Corps du message</label>
+                <textarea id="emailBody_lateAction" class="form-control email-body-textarea" rows="7" placeholder="Corps de l'e-mail…"></textarea>
+              </div>
+              <div class="email-vars">
+                <div class="email-vars-title">Cliquez sur une variable pour l'insérer dans le champ actif :</div>
+                <div class="email-vars-chips">
+                  <button class="email-var-chip" data-var="{{pilote_nom}}">{{pilote_nom}}</button>
+                  <button class="email-var-chip" data-var="{{pilote_email}}">{{pilote_email}}</button>
+                  <button class="email-var-chip" data-var="{{source}}">{{source}}</button>
+                  <button class="email-var-chip" data-var="{{action}}">{{action}}</button>
+                  <button class="email-var-chip" data-var="{{date_limite}}">{{date_limite}}</button>
+                  <button class="email-var-chip" data-var="{{date_realisation}}">{{date_realisation}}</button>
+                  <button class="email-var-chip" data-var="{{etat}}">{{etat}}</button>
+                  <button class="email-var-chip" data-var="{{commentaires}}">{{commentaires}}</button>
+                  <button class="email-var-chip" data-var="{{date_envoi}}">{{date_envoi}}</button>
+                </div>
+              </div>
+              <details class="email-preview-details">
+                <summary class="email-preview-summary">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Aperçu avec données d'exemple
+                </summary>
+                <div id="emailPreview_lateAction" class="email-preview-content"></div>
+              </details>
+            </div>
+          </div>
+
+          <div class="email-template-separator"></div>
+
+          <!-- ── Configuration EmailJS ── -->
+          <div class="email-config-section">
+            <div class="email-config-header">
+              <div class="email-config-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Service d'envoi — EmailJS
+              </div>
+              <div id="emailjsStatus"></div>
+            </div>
+            <p class="email-config-desc">
+              EmailJS envoie des e-mails directement depuis le navigateur, sans serveur.
+              Créez un compte gratuit sur <a href="https://www.emailjs.com/" target="_blank" rel="noopener noreferrer">emailjs.com</a>,
+              configurez un service (Gmail, Outlook, SMTP…) et un template avec les variables
+              <code>to_email</code>, <code>subject</code>, <code>message</code>.
+              Puis décommentez le script EmailJS dans <code>index.html</code>.
+            </p>
+            <div class="email-config-fields">
+              <div class="email-field-group">
+                <label class="email-field-label" for="emailjsServiceId">Service ID</label>
+                <input type="text" id="emailjsServiceId" class="form-control" placeholder="service_xxxxxxx" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="email-field-group">
+                <label class="email-field-label" for="emailjsTemplateId">Template ID</label>
+                <input type="text" id="emailjsTemplateId" class="form-control" placeholder="template_xxxxxxx" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="email-field-group">
+                <label class="email-field-label" for="emailjsPublicKey">Clé publique</label>
+                <input type="text" id="emailjsPublicKey" class="form-control" placeholder="XXXXXXXXXXXXXXXXXX" autocomplete="off" spellcheck="false">
+              </div>
+              <label class="email-toggle-label">
+                <input type="checkbox" id="emailjsEnabled">
+                <span>Activer l'envoi d'e-mails</span>
+              </label>
+              <button class="btn btn-primary" id="btnSaveEmailConfig">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="20 6 9 17 4 12"/></svg>
+                Enregistrer la configuration
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="settings-footer">
+      <p class="settings-footer-note">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4M12 8h.01"/>
+        </svg>
+        Les paramètres sont sauvegardés automatiquement dans ce navigateur.
+      </p>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TOASTS
+  ══════════════════════════════════════════════════════════ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- EmailJS SDK — décommenter après avoir configuré le service dans Paramètre > E-mails -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script> -->
+
+  <!-- Ordre de chargement : data.js → settings.js → pilots.js → emails.js → app.js -->
+  <script src="js/data.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/pilots.js"></script>
+  <script src="js/emails.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
